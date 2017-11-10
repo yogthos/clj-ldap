@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.0.15]
+This release adds the following:
+- A fix of StartTLS support.
+
 ## [0.0.14]
 This release adds the following:
 - The :initial-connections and :max-connections options to the connect function, without deprecating the :num-connections option.
