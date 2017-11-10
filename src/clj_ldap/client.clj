@@ -33,7 +33,8 @@
             PasswordModifyExtendedRequest
             PasswordModifyExtendedResult
             WhoAmIExtendedRequest
-            WhoAmIExtendedResult])
+            WhoAmIExtendedResult
+            StartTLSExtendedRequest])
   (:import [com.unboundid.ldap.sdk.controls
             PreReadRequestControl
             PostReadRequestControl
@@ -187,7 +188,7 @@
       ssl? (let [ssl (create-ssl-factory options)]
              (LDAPConnection. ssl opt host ldaps-port))
       startTLS? (let [conn (LDAPConnection. opt host ldap-port)]
-                  (.processExtendedOperation conn (create-ssl-context options))
+                  (.processExtendedOperation conn (StartTLSExtendedRequest. (create-ssl-context options)))
                   conn)
       :else (LDAPConnection. opt host ldap-port))))
 
