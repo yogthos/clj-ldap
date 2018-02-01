@@ -335,32 +335,34 @@
 ;; Extended version of search-results function using a
 ;; SearchRequest that uses a SimplePagedResultsControl.
 ;; Allows us to read arbitrarily large result sets.
-;; TODO make this lazy
 (defn- search-all-results
-  "Returns a sequence of search results via paging so we don't run into
+  "Returns a lazy sequence of search results via paging so we don't run into
    size limits with the number of results."
-  [connection {:keys [base scope filter attributes size-limit time-limit
-                      types-only controls byte-valued]}]
-  (let [pageSize 500
-        cookie nil
-        req (SearchRequest. base scope DereferencePolicy/NEVER
-                            size-limit time-limit types-only filter attributes)
-        - (and (not (empty? controls))
-               (.addControls req (into-array Control controls)))]
-    (loop [results []
-           cookie nil]
-      (.setControls req (list (SimplePagedResultsControl. pageSize cookie)))
-      (let [res (.search connection req)
-            control (SimplePagedResultsControl/get res)
-            newres (->> (.getSearchEntries res)
-                     (map (entry-as-map byte-valued))
-                     (remove empty?)
-                     (into results))]
-        (if (and
-              (not-nil? control)
-              (> (.getValueLength (.getCookie control)) 0))
-          (recur newres (.getCookie control))
-          (seq newres))))))
+  ([connection {:keys [base scope filter attributes size-limit time-limit
+                       types-only controls byte-valued
+                       cookie page-size request]
+                :or {page-size 500}
+                :as options}]
+   (let [paging (SimplePagedResultsControl. page-size cookie)
+         req (doto (or request
+                     (cond-> (SearchRequest. base scope DereferencePolicy/NEVER
+                                             size-limit time-limit types-only filter attributes)
+                       (seq controls) (doto (.addControls (into-array Control controls)))))
+               (.setControls (list paging)))
+         response (.search connection req)
+         results (->> response
+                      .getSearchEntries
+                      (map (entry-as-map byte-valued))
+                      (remove empty?))
+         next-paging (SimplePagedResultsControl/get response)
+         next-cookie (.getCookie next-paging)]
+     (if (and next-paging (pos? (.getValueLength next-cookie)))
+       (search-all-results connection
+                           (merge options {:cookie next-cookie :request request})
+                           results)
+       results)))
+  ([connection options results]
+   (lazy-seq (concat results (search-all-results connection options)))))
 
 (defn- search-results
   "Returns a sequence of search results for the given search criteria.
@@ -712,8 +714,8 @@ returned either before or after the modifications have taken place."
 ;;    :respf       Applies this function to all response controls present.
 
 (defn search-all
-  "Uses SimplePagedResultsControl to search on the connected ldap server, reads
-  all the results into memory and returns the results as a sequence of maps."
+  "Uses SimplePagedResultsControl to search on the connected ldap server,
+  and returns the results as a lazy sequence of maps."
   ([connection base]
    (search-all connection base nil))
   ([connection base options]
