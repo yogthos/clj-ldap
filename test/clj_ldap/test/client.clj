@@ -307,6 +307,17 @@
            (set [{:cn "testa" :sn "a"}
                  {:cn "testb" :sn "b"}])))))
 
+(deftest test-search-all
+  (let [options {:attributes [:cn] :page-size 2}
+        lazy-results (ldap/search-all *conn* base* options)
+        eager-results (ldap/search *conn* base* options)
+        ->cn-set (comp set (partial map :cn))]
+    (testing "Since search-all is lazy, not all results are fetched"
+      (is (not (realized? lazy-results))))
+    (testing "Lazy and eager search eventually produce the same results"
+      (is (->cn-set lazy-results)
+          (->cn-set eager-results)))))
+
 (deftest test-compare?
   (is (= (ldap/compare? *conn* (:dn person-b*)
                         :description "István Orosz")
