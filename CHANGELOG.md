@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.0.16]
+This release adds the following:
+- A lazy-seq returned by `search-all-results` using SimplePagedResults control. Thanks to @jindrichmynarz.
+
 ## [0.0.15]
 This release adds the following:
 - A fix of StartTLS support.
