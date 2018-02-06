@@ -148,8 +148,8 @@
             _ (ldap/bind? *c* (:dn person-a*) "passa")
             a (ldap/who-am-i *c*)
             _ (ldap/release-connection *conn* *c*)]
-        (is (= [before a])
-           ["" (:dn person-a*)])))))
+        (is (= [before a]
+               ["" (:dn person-a*)]))))))
 
 (deftest test-add-delete
   (is (= (ldap/add *conn* (:dn person-c*) (:object person-c*))
