@@ -537,12 +537,10 @@ If an LDAP connection pool object is passed as the connection argument
 the bind attempt will have no side-effects, leaving the state of the
 underlying connections unchanged."
   [connection bind-dn password]
-  (try
-    (let [r (if (instance? LDAPConnectionPool connection)
-              (.bindAndRevertAuthentication connection bind-dn password nil)
-              (.bind connection bind-dn password))]
-      (= ResultCode/SUCCESS (.getResultCode r)))
-    (catch Exception _ false)))
+  (let [r (if (instance? LDAPConnectionPool connection)
+            (.bindAndRevertAuthentication connection bind-dn password nil)
+            (.bind connection bind-dn password))]
+    (= ResultCode/SUCCESS (.getResultCode r))))
 
 (defn close
   "closes the supplied connection or pool object"
